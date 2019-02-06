@@ -50,11 +50,6 @@ void saveConfigCallback () {
 
 
 void configModeCallback (WiFiManager *myWiFiManager) {
-  display.clear();
-  display.setFont(ArialMT_Plain_10);
-  display.drawString(0, 10, "Entered config mode");
-  display.drawString(0, 25, myWiFiManager->getConfigPortalSSID());
-  display.display();
 }
 
 
@@ -246,8 +241,6 @@ void setup() {
   
   delay(2000);
   // WiFi.disconnect();
-  display.clear();
-  display.displayOff();
 }
 
 
