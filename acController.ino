@@ -20,6 +20,12 @@
 #define RELAY_TURN_OFF   LOW
 #define RELAY_TURN_ON    HIGH
 
+#define TIME_ON_DEFAULT (15*60)
+
+int timeOn = -1;
+time_t whenToStop = -1;
+int relayStatus = 0;
+
 #define AP_SSID               "ACRELAY_AP"
 
 ESP8266WebServer server(80);
@@ -53,6 +59,24 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 }
 
 
+
+void relayOn() {
+  DEBUG_LOG_INFO_LN("Relay ON" );
+  digitalWrite(RELAY_PIN, RELAY_TURN_ON);
+  relayStatus = 1;
+}
+
+
+void relayOff() {
+  DEBUG_LOG_INFO_LN("Relay OFF" );
+  digitalWrite(RELAY_PIN, RELAY_TURN_OFF);
+  relayStatus = 0;
+}
+
+
+
+
+
 void handleRoot() {
   server.send(200, "text/plain", "hello from esp8266!");
 }
@@ -82,17 +106,40 @@ void handleNotFound(){
 }
 
 void handleOn() {
+  time_t currentTime = time(nullptr);
+  whenToStop = currentTime + TIME_ON_DEFAULT;
+  
   // should check time here
-  digitalWrite(RELAY_PIN, RELAY_TURN_ON);
+  DEBUG_LOG_INFO_LN("Requested Relay ON" );
+  relayOn();
+  for (int i = 0; i < server.args(); i++) {
+    if(server.argName(i) == "time") {
+      timeOn = server.arg(i).toInt();
+      whenToStop = currentTime + timeOn;
+      
+      DEBUG_LOG_INFO("Time: " );
+      DEBUG_LOG_LN(timeOn);
+      break;
+    }
+  } 
   server.send(200, "text/plain", "On");  
 }
 
 
 void handleOff() {
-  digitalWrite(RELAY_PIN, RELAY_TURN_OFF);
+  DEBUG_LOG_INFO_LN("Requested Relay OFF" );
+  relayOff();
   server.send(200, "text/plain", "Off");  
 }
 
+
+void handleStatus() {
+  time_t currentTime = time(nullptr);
+  DEBUG_LOG_INFO_LN("Requested Status" );
+  String response = "Relay is " + (relayStatus?"ON remaining time: " + String(whenToStop - currentTime) + " seconds":"OFF");
+  
+  server.send(200, "text/plain", response);
+}
 
 void setup() {
   Serial.begin(115200);
@@ -211,6 +258,7 @@ void setup() {
   server.on("/disconnectWifi", handleDisconnect);
   server.on("/v1/off", handleOff);
   server.on("/v1/on", handleOn);
+  server.on("/v1/status", handleStatus);
   
   server.onNotFound(handleNotFound);
 
@@ -275,6 +323,19 @@ void loop() {
   }
 
   MDNS.update();
+
+  if(relayStatus){
+    if(currentTime >= whenToStop) {
+         
+      DEBUG_LOG_INFO("Time to turn Relay OFF after " );
+      DEBUG_LOG(timeOn); 
+      DEBUG_LOG_LN(" seconds");
+      timeOn = -1;
+      whenToStop = -1;
+      relayOff();
+    }
+  }
+
 
   // Wait between measurements.
   delay(500);
