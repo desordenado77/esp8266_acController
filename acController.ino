@@ -136,9 +136,16 @@ void handleOff() {
 void handleStatus() {
   time_t currentTime = time(nullptr);
   DEBUG_LOG_INFO_LN("Requested Status" );
-  String response = "Relay is " + (relayStatus?"ON remaining time: " + String(whenToStop - currentTime) + " seconds":"OFF");
+
+  DynamicJsonBuffer jsonBuffer;
+  JsonObject& json = jsonBuffer.createObject();
+  json["relay_status"] = (relayStatus?"ON":"OFF");
+  json["remaining_time"] = String(whenToStop - currentTime);
   
-  server.send(200, "text/plain", response);
+  String jsonStr;
+  json.printTo(jsonStr);
+ 
+  server.send(200, "application/json", jsonStr);
 }
 
 void setup() {
