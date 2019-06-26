@@ -17,8 +17,8 @@
 #define RELAY_PIN        4 // Relay control.
 #define OPTOCOUPLER_PIN  5 // Optocoupler input.
 
-#define RELAY_TURN_OFF   LOW
-#define RELAY_TURN_ON    HIGH
+#define RELAY_TURN_OFF   HIGH // LOW
+#define RELAY_TURN_ON    LOW  // HIGH
 
 #define TIME_ON_DEFAULT (15*60)
 
@@ -156,6 +156,8 @@ void setup() {
   //clean FS, for testing
   //SPIFFS.format();
 
+  relayOff();
+
   //read configuration from FS json
   DEBUG_LOG_INFO_LN("mounting FS...");
 
@@ -292,7 +294,7 @@ void setup() {
   enableTime = 1;
 
 
-  wifi_set_sleep_type(LIGHT_SLEEP_T);
+  //wifi_set_sleep_type(LIGHT_SLEEP_T);
   
   delay(2000);
   // WiFi.disconnect();
@@ -347,7 +349,7 @@ void loop() {
   // Wait between measurements.
   delay(500);
   
-//  DEBUG_LOG_INFO("Memory: ");
-//  DEBUG_LOG_LN(ESP.getFreeHeap());
+  DEBUG_LOG_INFO("Memory: ");
+  DEBUG_LOG_LN(ESP.getFreeHeap());
   
 }
